@@ -95,6 +95,14 @@ def retrieve_headlines(soup):
 
 @benchmark
 def crawl_newsapi_resources(api_key):
+    """
+    Crawl RSS feed of several news resources of a given country and language
+    News resources URLs are fetched from NewsAPI
+    Parameters:
+        api_key (str): An API key to initialize NewsAPI client and fetch data
+    Returns:
+        list[str]: List of news headlines
+    """
     headlines = []
     # Initialize the NewsAPI client with an API key
     newsapi = NewsApiClient(api_key=api_key)
@@ -117,6 +125,13 @@ def crawl_newsapi_resources(api_key):
 
 @benchmark
 def crawl_given_website(url):
+    """
+    Crawl RSS feed of a given website
+    Parameters:
+        url (str): News website to scrap
+    Returns:
+        list[str]: List of news headlines
+    """
     headlines = []
     rss_feed = scrap_feed(url)
     # If result is not None (not found)
