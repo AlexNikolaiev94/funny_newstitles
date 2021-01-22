@@ -16,7 +16,7 @@ newsapi = NewsApiClient(api_key=API_KEY)
 
 def add_domain(domains, url):
     """
-    Check for dublicates and add to the sources list
+    Check for duplicates and add to the sources list
     Parameters:
         domains (list[str]): list of domains to add the URL to
         url (str): url to add
@@ -89,11 +89,11 @@ def retrieve_headlines(soup):
 
 def main():
     all_titles = []
-    start = time.process_time()
+    start = time.time()
     print("Commencing scraping...")
     # fetch top headlines from NewsAPI to retrieve news sources
     # change language and country according to your desired
-    top_headlines = newsapi.get_top_headlines(language="ru", country="ru")
+    top_headlines = newsapi.get_top_headlines(language="ru", country="ua")
     # Retrieve news source URLs from the fetched news
     domains = get_domain_list(top_headlines["articles"])
     # Using the retrieved URLs scrap their RSS feeds
@@ -105,9 +105,10 @@ def main():
         if rss_feed:
             titles = retrieve_headlines(rss_feed)
             all_titles.extend(titles)
-    end = time.process_time()
+    end = time.time()
     print("Scraping complete!")
-    print("Time elapsed: {}".format(end - start))
+    print("{} resources crawled.".format(len(domains)))
+    print("Time elapsed: {} seconds.".format(end - start))
     # Write the result to a json file to feed it to Markov chain
     with open("output.json", "w", encoding="utf-8") as output:
         json.dump({"titles": all_titles}, output, ensure_ascii=False)
