@@ -1,2 +1,5 @@
 /devenv/
 /.idea/
+input.*
+output.*
+.env
