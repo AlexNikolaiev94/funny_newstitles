@@ -21,36 +21,43 @@ def benchmark(func):
 
 
 def add_domain(domains, url):
+    domain_list = domains
     """
     Check for duplicates and add to the sources list
+
     Parameters:
         domains (list[str]): list of domains to add the URL to
         url (str): url to add
     """
-    if url not in domains:
-        domains.append(url)
+    if url not in domain_list:
+        domain_list.append(url)
+    return domain_list
 
 
 def get_domain_list(articles):
     """
     Retrieve news source URLs from NewsAPI data
+
     Parameters:
         articles (dict): newsapi.get_top_headlines(*args, **kwargs)["articles"]
+
     Returns:
         list[str]: List of the URLs for RSS feed scraping
     """
     domain_list = []
     for article in articles:
         source_url = urlparse(article["url"]).netloc
-        add_domain(domain_list, "http://{}".format(source_url))
+        domain_list = add_domain(domain_list, "http://{}".format(source_url))
     return domain_list
 
 
 def scrap_feed(domain):
     """
     Scraps the given news source RSS feed
+
     Parameters:
         domain (str): news source to crawl
+
     Returns:
         None | bs4.BeautifulSoup: None if 404 or XML response for parsing
     """
@@ -71,8 +78,10 @@ def scrap_feed(domain):
 def retrieve_headlines(soup):
     """
     Parses the XML data and retrieves headlines
+
     Parameters:
         soup (bs4.BeautifulSoup): XML input
+
     Returns:
         list[str]: List of headlines from the XML response
     """
@@ -96,10 +105,12 @@ def retrieve_headlines(soup):
 @benchmark
 def crawl_newsapi_resources(api_key):
     """
-    Crawl RSS feed of several news resources of a given country and language
+    Crawl RSS feed of several news resources of a given country and language.
     News resources URLs are fetched from NewsAPI
+
     Parameters:
         api_key (str): An API key to initialize NewsAPI client and fetch data
+
     Returns:
         list[str]: List of news headlines
     """
@@ -127,8 +138,10 @@ def crawl_newsapi_resources(api_key):
 def crawl_given_website(url):
     """
     Crawl RSS feed of a given website
+
     Parameters:
         url (str): News website to scrap
+
     Returns:
         list[str]: List of news headlines
     """
@@ -153,6 +166,8 @@ def main(argv):
         headlines = crawl_newsapi_resources(args.key)
     else:
         print("Please provide either a website to crawl or a NewsAPI key")
+        parser.print_help()
+        sys.exit(2)
     # Write the result to a json file to feed it to Markov chain
     with open("output.json", "w", encoding="utf-8") as output:
         json.dump({"headlines": headlines}, output, ensure_ascii=False)
