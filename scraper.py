@@ -1,17 +1,23 @@
+import argparse
 import bs4
 import json
-import os
 import requests
+import sys
 import time
-from dotenv import load_dotenv
 from newsapi import NewsApiClient
 from urllib.parse import urlparse
 
-# load the API key from the .env file
-load_dotenv()
-# Initialize the client with an API key
-API_KEY = os.getenv("NEWSAPI_KEY")
-newsapi = NewsApiClient(api_key=API_KEY)
+
+def benchmark(func):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        print("Commencing scraping...")
+        result = func(*args, **kwargs)
+        end = time.time()
+        print("Scraping complete!")
+        print("Time elapsed: {} seconds.".format(end - start))
+        return result
+    return wrapper
 
 
 def add_domain(domains, url):
@@ -87,10 +93,11 @@ def retrieve_headlines(soup):
     return result
 
 
-def main():
-    all_titles = []
-    start = time.time()
-    print("Commencing scraping...")
+@benchmark
+def crawl_newsapi_resources(api_key):
+    headlines = []
+    # Initialize the NewsAPI client with an API key
+    newsapi = NewsApiClient(api_key=api_key)
     # fetch top headlines from NewsAPI to retrieve news sources
     # change language and country according to your desired
     top_headlines = newsapi.get_top_headlines(language="ru", country="ua")
@@ -104,15 +111,38 @@ def main():
         # parse XML response and retrieve the headlines
         if rss_feed:
             titles = retrieve_headlines(rss_feed)
-            all_titles.extend(titles)
-    end = time.time()
-    print("Scraping complete!")
-    print("{} resources crawled.".format(len(domains)))
-    print("Time elapsed: {} seconds.".format(end - start))
+            headlines.extend(titles)
+    return headlines
+
+
+@benchmark
+def crawl_given_website(url):
+    headlines = []
+    rss_feed = scrap_feed(url)
+    # If result is not None (not found)
+    # parse XML response and retrieve the headlines
+    if rss_feed:
+        headlines = retrieve_headlines(rss_feed)
+    return headlines
+
+
+def main(argv):
+    headlines = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-u", "--url", help="pass news website")
+    parser.add_argument("-k", "--key", help="pass NewsAPI key")
+    args = parser.parse_args()
+    if args.url:
+        headlines = crawl_given_website(args.url)
+    elif args.key:
+        headlines = crawl_newsapi_resources(args.key)
+    else:
+        print("Please provide either a website to crawl or a NewsAPI key")
     # Write the result to a json file to feed it to Markov chain
     with open("output.json", "w", encoding="utf-8") as output:
-        json.dump({"titles": all_titles}, output, ensure_ascii=False)
+        json.dump({"headlines": headlines}, output, ensure_ascii=False)
+    sys.exit(0)
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
