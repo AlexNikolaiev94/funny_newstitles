@@ -1,5 +1,6 @@
 import argparse
 import bs4
+import csv
 import json
 import requests
 import sys
@@ -119,7 +120,7 @@ def crawl_newsapi_resources(api_key):
     newsapi = NewsApiClient(api_key=api_key)
     # fetch top headlines from NewsAPI to retrieve news sources
     # change language and country according to your desired
-    top_headlines = newsapi.get_top_headlines(language="ru", country="ua")
+    top_headlines = newsapi.get_top_headlines(language="ru", country="ru")
     # Retrieve news source URLs from the fetched news
     domains = get_domain_list(top_headlines["articles"])
     # Using the retrieved URLs scrap their RSS feeds
@@ -157,21 +158,36 @@ def crawl_given_website(url):
 def main(argv):
     headlines = []
     parser = argparse.ArgumentParser()
-    parser.add_argument("-u", "--url", help="pass news website")
-    parser.add_argument("-k", "--key", help="pass NewsAPI key")
+    # Make sure either website or NewsAPI key is given
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("-u", "--url", nargs=1, dest="site_url",
+                        help="pass news website")
+    source.add_argument("-k", "--key", nargs=1, dest="api_key",
+                        help="pass NewsAPI key")
+    # Make sure one of the available output formats is specified
+    output_format = parser.add_mutually_exclusive_group(required=True)
+    output_format.add_argument("--csv", action="store_true",
+                        help="generate input file in CSV")
+    output_format.add_argument("--json", action="store_true",
+                        help="generate input file in JSON")
     args = parser.parse_args()
-    if args.url:
-        headlines = crawl_given_website(args.url)
-    elif args.key:
-        headlines = crawl_newsapi_resources(args.key)
-    else:
-        print("Please provide either a website to crawl or a NewsAPI key")
-        parser.print_help()
-        sys.exit(2)
-    # Write the result to a json file to feed it to Markov chain
-    with open("output.json", "w", encoding="utf-8") as output:
-        json.dump({"headlines": headlines}, output, ensure_ascii=False)
-    sys.exit(0)
+    if args.site_url:
+        headlines = crawl_given_website(args.site_url[0])
+    elif args.api_key:
+        headlines = crawl_newsapi_resources(args.api_key[0])
+    # Write the result to a file to feed it to Markov chain
+    if args.csv:
+        with open("input.csv", "w", newline="", encoding="utf-8") as _file:
+            fieldnames = ["headline", ]
+            writer = csv.DictWriter(_file, fieldnames)
+            writer.writeheader()
+            for h in headlines:
+                writer.writerow({"headline": h})
+        sys.exit(0)
+    elif args.json:
+        with open("input.json", "w", encoding="utf-8") as _file:
+            json.dump({"headlines": headlines}, _file, ensure_ascii=False)
+        sys.exit(0)
 
 
 if __name__ == '__main__':
