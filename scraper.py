@@ -155,7 +155,7 @@ def crawl_given_website(url):
     return headlines
 
 
-def main(argv):
+def main():
     headlines = []
     parser = argparse.ArgumentParser()
     # Make sure either website or NewsAPI key is given
@@ -167,9 +167,9 @@ def main(argv):
     # Make sure one of the available output formats is specified
     output_format = parser.add_mutually_exclusive_group(required=True)
     output_format.add_argument("--csv", action="store_true",
-                        help="generate input file in CSV")
+                               help="generate input file in CSV")
     output_format.add_argument("--json", action="store_true",
-                        help="generate input file in JSON")
+                               help="generate input file in JSON")
     args = parser.parse_args()
     if args.site_url:
         headlines = crawl_given_website(args.site_url[0])
@@ -191,4 +191,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
